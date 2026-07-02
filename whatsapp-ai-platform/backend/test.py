@@ -1,7 +1,21 @@
+import os
 from pymongo import MongoClient
+from dotenv import load_dotenv
 
-uri = "mongodb+srv://vaibhavssingh09_db_user:Clj2TPgnkccB2cx9@cluster0.egji3d0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+# Load variables from .env
+load_dotenv()
+
+# Read MongoDB URI from environment
+uri = os.getenv("MONGO_URI")
+
+if not uri:
+    raise ValueError("MONGO_URI not found. Please set it in your .env 
+file.")
 
 client = MongoClient(uri)
 
-print(client.admin.command("ping"))
+try:
+    client.admin.command("ping")
+    print("✅ Successfully connected to MongoDB Atlas!")
+except Exception as e:
+    print(f"❌ Connection failed: {e}")
