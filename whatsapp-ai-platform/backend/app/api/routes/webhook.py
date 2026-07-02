@@ -49,6 +49,12 @@ async def verify_webhook(
     App Dashboard. Must echo back `hub.challenge` as plain text if the mode
     and token match what's configured, or Meta refuses to save the webhook.
     """
+    logger.info(
+        "verify_debug",
+         mode=hub_mode,
+        received=hub_verify_token,
+        expected=settings.META_VERIFY_TOKEN,
+    )
     if hub_mode == "subscribe" and hub_verify_token == settings.META_VERIFY_TOKEN:
         return Response(content=hub_challenge, media_type="text/plain")
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Verification token mismatch")
