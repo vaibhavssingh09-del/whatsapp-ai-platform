@@ -1,0 +1,56 @@
+# Render Blueprint — deploy both services with "New +" -> "Blueprint" in the
+# Render dashboard, pointing at this repo. Fill in the marked env vars in the
+# Render dashboard after the first deploy (secrets aren't stored in this file).
+#
+# Design decision: two separate Render Web Services (not one combined
+# container) so the backend and frontend scale, redeploy, and roll back
+# independently — a frontend copy change shouldn't require rebuilding and
+# redeploying the Python backend, and vice versa.
+services:
+  - type: web
+    name: whatsapp-ai-platform-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: starter
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: JWT_SECRET_KEY
+        sync: false # set manually in Render dashboard - do not commit secrets
+      - key: MONGO_URI
+        sync: false
+      - key: MONGO_DB_NAME
+        value: whatsapp_ai_platform
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: META_APP_SECRET
+        sync: false
+      - key: META_VERIFY_TOKEN
+        sync: false
+      - key: CORS_ORIGINS
+        value: '["https://whatsapp-ai-platform-frontend.onrender.com"]'
+    healthCheckPath: /health
+
+  - type: web
+    name: whatsapp-ai-platform-frontend
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    plan: starter
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: /api/v1
+      # Render has no shared internal DNS between separate Web Services (unlike
+      # Docker Compose's "backend" hostname), so this must be the backend
+      # service's actual public URL. `fromService` auto-resolves it so you
+      # don't have to hardcode/update it if the backend's URL ever changes.
+      - key: BACKEND_ORIGIN
+        fromService:
+          name: whatsapp-ai-platform-backend
+          type: web
+          property: hostport

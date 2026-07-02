@@ -1,0 +1,40 @@
+version: "3.9"
+
+# Design decision: MongoDB is NOT included as a compose service. This project
+# targets MongoDB Atlas (per the assignment's tech stack) rather than a local
+# Mongo container, because (a) it matches production exactly, avoiding a
+# "works locally, breaks in Atlas" class of bugs around auth/connection
+# strings, and (b) Atlas's free tier is sufficient for development. Point
+# MONGO_URI at an Atlas cluster (see README) even for local dev. If you'd
+# rather run Mongo locally, uncomment the `mongo` service block below and
+# change MONGO_URI to mongodb://mongo:27017.
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/app
+      - media_storage:/app/media_storage
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+  # mongo:
+  #   image: mongo:7
+  #   ports:
+  #     - "27017:27017"
+  #   volumes:
+  #     - mongo_data:/data/db
+
+volumes:
+  media_storage:
+  # mongo_data:
